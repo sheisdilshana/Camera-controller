@@ -3,207 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Creator Studio Pro | Top View</title>
+    <title>CinePrompt | Native 4K</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+Kannada:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        /* RESET & BASICS */
         body { margin: 0; background: #000; color: #fff; font-family: 'Inter', 'Noto Sans Kannada', sans-serif; overflow: hidden; height: 100vh; }
         
-        /* LAYOUTS */
-        #screen-setup, #screen-studio { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
-        #screen-studio { display: none; }
-
-        /* SETUP SCREEN */
-        #screen-setup {
-            display: flex; flex-direction: column; padding: 25px; z-index: 50; background: #050505; overflow-y: auto;
+        /* FULLSCREEN VIDEO - NO FILTERS */
+        #camera-view {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; background: #000;
         }
-        h2 { color: #ec4899; margin-bottom: 5px; font-weight: 800; }
-        .warning { background: #331111; color: #ff8888; padding: 10px; font-size: 0.8rem; border-radius: 8px; margin-bottom: 15px; display: none; }
-        
-        textarea {
-            width: 100%; height: 250px; background: #1a1a1a; border: 1px solid #333; color: #fff; 
-            padding: 15px; border-radius: 12px; font-size: 1.1rem; margin-bottom: 20px; resize: none; outline: none;
-        }
-        
-        .btn {
-            background: linear-gradient(90deg, #6366f1, #ec4899); border: none; padding: 16px; 
-            color: white; font-weight: bold; font-size: 1.1rem; border-radius: 50px; width: 100%; margin-top: 15px;
-            box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3);
-        }
-
-        /* STUDIO SCREEN */
         video {
             width: 100%; height: 100%; object-fit: cover;
-            transform: scaleX(-1); /* Mirror Preview */
+            transform: scaleX(-1); /* Mirror effect only for preview */
         }
-        
-        #overlay-container {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
+
+        /* TEXT OVERLAY LAYER */
+        #script-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 10; pointer-events: none;
             display: flex; justify-content: center;
-            /* UPDATED MASK: Clear at top, fade out at bottom */
-            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 80%, transparent 100%);
-            mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 80%, transparent 100%);
+            /* Clean fade mask */
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 65%, transparent 100%);
+            mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 65%, transparent 100%);
         }
-        
-        #scroll-text {
+
+        #scrolling-text {
             width: 90%; max-width: 500px; text-align: center;
             font-size: 2rem; font-weight: 700; line-height: 1.5;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-            
-            /* --- UPDATED POSITIONING --- */
-            padding-top: 15vh;    /* Starts 15% from top (perfect for eye contact) */
-            padding-bottom: 80vh; /* Space to let last line scroll up */
-            transform: translateY(0px);
-            will-change: transform;
+            color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            /* START POSITION: 15% from top */
+            padding-top: 15vh; padding-bottom: 80vh;
+            transform: translateY(0); will-change: transform;
         }
 
-        /* CONTROLS */
-        .controls {
-            position: absolute; bottom: 30px; left: 15px; right: 15px;
-            background: rgba(10, 10, 10, 0.85); backdrop-filter: blur(8px);
-            padding: 15px 20px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.15);
+        /* UI CONTROLS LAYER */
+        #ui-layer {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 100%;
+            z-index: 20; pointer-events: none; /* Let clicks pass through to empty areas */
+            display: flex; flex-direction: column; justify-content: flex-end;
+        }
+
+        .control-bar {
+            pointer-events: auto;
+            background: rgba(0, 0, 0, 0.6); /* Simple dark bg, no blurry noise */
+            padding: 20px;
             display: flex; align-items: center; justify-content: space-between;
+            padding-bottom: 40px;
         }
 
-        .record-ring {
-            width: 75px; height: 75px; border: 4px solid rgba(255,255,255,0.9); border-radius: 50%;
+        /* BUTTONS */
+        .rec-btn-outer {
+            width: 76px; height: 76px; border: 4px solid #fff; border-radius: 50%;
             display: flex; align-items: center; justify-content: center; cursor: pointer;
         }
-        .record-dot {
-            width: 55px; height: 55px; background: #ff3b30; border-radius: 50%; transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        .rec-btn-inner {
+            width: 60px; height: 60px; background: #ff0000; border-radius: 50%; transition: 0.2s;
         }
-        .recording .record-dot { border-radius: 6px; transform: scale(0.5); }
+        .recording .rec-btn-inner { transform: scale(0.5); border-radius: 6px; }
 
-        input[type=range] { width: 90px; accent-color: #ec4899; }
-        .label { font-size: 0.65rem; color: #aaa; text-align: center; margin-bottom: 5px; letter-spacing: 1px; }
+        .reshoot-btn {
+            background: #222; border: 1px solid #444; color: #fff;
+            width: 50px; height: 50px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; cursor: pointer; pointer-events: auto;
+            opacity: 0; transition: 0.3s;
+        }
+        .show-reshoot { opacity: 1; }
 
-        /* Exit Button */
+        /* INPUTS */
+        input[type=range] { width: 80px; accent-color: #ff0000; }
+        .label { font-size: 10px; text-transform: uppercase; color: #ccc; text-align: center; margin-bottom: 5px; }
+
+        /* SETUP SCREEN */
+        #setup-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #111; z-index: 50; padding: 30px;
+            display: flex; flex-direction: column;
+        }
+        textarea {
+            width: 100%; flex: 1; background: #222; border: 1px solid #333;
+            color: #fff; font-size: 18px; padding: 15px; border-radius: 10px;
+            margin: 20px 0; resize: none; outline: none;
+        }
+        .big-btn {
+            background: #fff; color: #000; border: none; padding: 15px;
+            font-weight: bold; font-size: 18px; border-radius: 10px; width: 100%;
+        }
         .exit-btn {
-            position: absolute; top: 20px; left: 20px; z-index: 100;
-            background: rgba(0,0,0,0.5); color: #fff; border: 1px solid #444; 
-            padding: 8px 16px; border-radius: 20px; font-size: 0.8rem;
+            position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.5);
+            color: #fff; border: 1px solid #fff; padding: 5px 15px; border-radius: 20px;
+            pointer-events: auto; font-size: 12px; z-index: 100;
         }
     </style>
 </head>
 <body>
 
-    <!-- SCREEN 1: SETUP -->
-    <div id="screen-setup">
-        <h2>CinePrompt</h2>
-        <div id="https-warning" class="warning">
-            ⚠️ HOSTING REQUIRED: Upload this folder to Netlify Drop to use the camera.
-        </div>
-        <p style="color:#888; margin-bottom:10px;">Paste your script (Kannada/English):</p>
-        <textarea id="inp-script" placeholder="Write your script here..."></textarea>
-        
-        <div style="display:flex; gap:15px; margin-bottom:5px;">
-            <div style="flex:1;">
-                <p class="label" style="text-align:left;">QUALITY</p>
-                <select id="sel-res" style="width:100%; padding:12px; background:#222; color:#fff; border:1px solid #444; border-radius:8px;">
-                    <option value="4k">Max (4K)</option>
-                    <option value="1080p" selected>1080p FHD</option>
-                    <option value="720p">720p HD</option>
-                </select>
-            </div>
-            <div style="flex:1;">
-                <p class="label" style="text-align:left;">FPS</p>
-                <select id="sel-fps" style="width:100%; padding:12px; background:#222; color:#fff; border:1px solid #444; border-radius:8px;">
-                    <option value="60">60 FPS</option>
-                    <option value="30" selected>30 FPS</option>
-                </select>
-            </div>
-        </div>
-
-        <button class="btn" onclick="launchStudio()">OPEN STUDIO</button>
+    <!-- SETUP SCREEN -->
+    <div id="setup-screen">
+        <h2 style="margin:0;">New Project</h2>
+        <p style="color:#666; font-size:12px; margin-top:5px;">Paste your script below</p>
+        <textarea id="script-box" placeholder="Start typing..."></textarea>
+        <button class="big-btn" onclick="openCamera()">Start Camera</button>
     </div>
 
-    <!-- SCREEN 2: STUDIO -->
-    <div id="screen-studio">
-        <button class="exit-btn" onclick="location.reload()">✕ Exit</button>
-        
-        <video id="vid" autoplay playsinline muted></video>
-        
-        <div id="overlay-container">
-            <div id="scroll-text"></div>
+    <!-- MAIN STUDIO -->
+    <div id="studio-screen" style="display:none;">
+        <button class="exit-btn" onclick="location.reload()">Exit</button>
+
+        <div id="camera-view">
+            <video id="vid" autoplay playsinline muted></video>
         </div>
 
-        <div class="controls">
-            <div>
-                <div class="label">SPEED</div>
-                <input type="range" id="rng-speed" min="0" max="8" step="0.5" value="1.5">
-            </div>
-            
-            <div class="record-ring" id="btn-rec" onclick="toggleRec()">
-                <div class="record-dot"></div>
-            </div>
+        <div id="script-layer">
+            <div id="scrolling-text"></div>
+        </div>
 
-            <div>
-                <div class="label">SIZE</div>
-                <input type="range" id="rng-size" min="1.5" max="4.5" step="0.2" value="2.2">
+        <div id="ui-layer">
+            <div class="control-bar">
+                <!-- Speed -->
+                <div>
+                    <div class="label">Speed</div>
+                    <input type="range" id="speed-range" min="0" max="4" step="0.1" value="0.5">
+                </div>
+
+                <!-- Record Actions -->
+                <div style="display:flex; align-items:center; gap: 20px;">
+                    <div id="btn-reshoot" class="reshoot-btn" onclick="doReshoot()">↺</div>
+                    
+                    <div class="rec-btn-outer" id="btn-record" onclick="toggleRecord()">
+                        <div class="rec-btn-inner"></div>
+                    </div>
+                </div>
+
+                <!-- Font Size -->
+                <div>
+                    <div class="label">Size</div>
+                    <input type="range" id="size-range" min="1.5" max="4.0" step="0.1" value="2.2">
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // --- CHECK HTTPS ---
-        if (location.protocol === 'file:') {
-            document.getElementById('https-warning').style.display = 'block';
-        }
-
         // --- VARIABLES ---
         let stream, recorder, chunks = [];
-        let scrollY = 0, scrollTimer, isScrolling = false;
-        const vid = document.getElementById('vid');
-        const textDiv = document.getElementById('scroll-text');
+        let scrollY = 0, scrollInterval;
+        let isRecording = false;
         
-        // --- LAUNCH ---
-        async function launchStudio() {
-            const script = document.getElementById('inp-script').value;
-            if(!script) return alert("Please write a script first!");
+        const vid = document.getElementById('vid');
+        const textDiv = document.getElementById('scrolling-text');
+        const recBtn = document.getElementById('btn-record');
+        const reshootBtn = document.getElementById('btn-reshoot');
 
-            // UI Switch
-            document.getElementById('screen-setup').style.display = 'none';
-            document.getElementById('screen-studio').style.display = 'block';
+        // --- CAMERA SETUP (RAW QUALITY) ---
+        async function openCamera() {
+            const script = document.getElementById('script-box').value;
+            if(!script) return alert("Please enter a script");
+            
+            document.getElementById('setup-screen').style.display = 'none';
+            document.getElementById('studio-screen').style.display = 'block';
             textDiv.innerText = script;
 
-            // Camera Config
-            const res = document.getElementById('sel-res').value;
-            const fps = document.getElementById('sel-fps').value;
-            
-            let w = 1920, h = 1080;
-            if(res === '4k') { w = 3840; h = 2160; }
-            if(res === '720p') { w = 1280; h = 720; }
-
+            // NATIVE CONSTRAINTS: 
+            // We ask for 4K. If the phone can't do it, it gives the best it has.
+            // We DO NOT set frameRate. We let the phone decide (Auto-Exposure).
+            // This fixes the "Grain/Noise" issue in dark rooms.
             const constraints = {
                 audio: true,
                 video: {
                     facingMode: "user",
-                    width: { ideal: w },
-                    height: { ideal: h },
-                    frameRate: { ideal: parseInt(fps) }
+                    width: { ideal: 4096 }, 
+                    height: { ideal: 2160 } 
                 }
             };
 
             try {
                 stream = await navigator.mediaDevices.getUserMedia(constraints);
                 vid.srcObject = stream;
-            } catch(e) {
-                // Fallback if 4K fails
-                try {
-                    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
-                    vid.srcObject = stream;
-                } catch(err) {
-                    alert("Camera blocked. Please allow permissions.");
-                    location.reload();
-                }
+            } catch (err) {
+                alert("Camera Error: " + err.message);
+                location.reload();
             }
         }
 
-        // --- SCROLL LOGIC ---
+        // --- SCROLLING ---
         function startScroll() {
-            if(isScrolling) return;
-            isScrolling = true;
-            scrollTimer = setInterval(() => {
-                const speed = parseFloat(document.getElementById('rng-speed').value);
+            clearInterval(scrollInterval);
+            scrollInterval = setInterval(() => {
+                const speed = parseFloat(document.getElementById('speed-range').value);
                 if(speed > 0) {
                     scrollY -= speed;
                     textDiv.style.transform = `translateY(${scrollY}px)`;
@@ -211,72 +200,98 @@
             }, 16);
         }
 
-        function stopScroll() {
-            isScrolling = false;
-            clearInterval(scrollTimer);
-        }
-
-        // --- CONTROLS ---
-        document.getElementById('rng-size').addEventListener('input', e => {
-            textDiv.style.fontSize = e.target.value + 'rem';
-        });
-
-        document.getElementById('rng-speed').addEventListener('input', e => {
-            if(!isScrolling && stream) startScroll();
-        });
+        function stopScroll() { clearInterval(scrollInterval); }
 
         // --- RECORDING ---
-        function toggleRec() {
-            const btn = document.getElementById('btn-rec');
-            if(btn.classList.contains('recording')) {
-                // STOP
-                recorder.stop();
-                btn.classList.remove('recording');
-                stopScroll();
+        function toggleRecord() {
+            if(isRecording) {
+                // FINISH
+                finishRecording();
             } else {
                 // START
-                chunks = [];
-                // Check support
-                let options = { mimeType: 'video/webm' };
-                if (MediaRecorder.isTypeSupported('video/mp4')) options = { mimeType: 'video/mp4' };
-                
-                try {
-                    recorder = new MediaRecorder(stream, options);
-                } catch(e) {
-                    recorder = new MediaRecorder(stream);
-                }
-                
-                recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
-                recorder.onstop = saveVid;
-                recorder.start();
-                
-                btn.classList.add('recording');
-                startScroll();
+                startRecording();
             }
         }
 
-        function saveVid() {
+        function startRecording() {
+            chunks = [];
+            
+            // Prefer MP4 for better Android/iPhone compatibility
+            let options = { mimeType: 'video/mp4' };
+            if (!MediaRecorder.isTypeSupported('video/mp4')) {
+                options = { mimeType: 'video/webm' };
+            }
+
+            try {
+                recorder = new MediaRecorder(stream, options);
+            } catch(e) {
+                recorder = new MediaRecorder(stream); // Fallback
+            }
+
+            recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
+            recorder.onstop = saveVideo;
+            
+            recorder.start();
+            isRecording = true;
+            recBtn.classList.add('recording');
+            reshootBtn.classList.add('show-reshoot');
+            startScroll();
+        }
+
+        function finishRecording() {
+            if(recorder && recorder.state !== 'inactive') recorder.stop();
+            isRecording = false;
+            recBtn.classList.remove('recording');
+            reshootBtn.classList.remove('show-reshoot');
+            stopScroll();
+        }
+
+        // --- RESHOOT (CANCEL) ---
+        function doReshoot() {
+            // Stop recorder but disconnect the save function
+            recorder.onstop = null; 
+            recorder.stop();
+            
+            isRecording = false;
+            recBtn.classList.remove('recording');
+            reshootBtn.classList.remove('show-reshoot');
+            stopScroll();
+            
+            // Reset Text
+            scrollY = 0;
+            textDiv.style.transform = `translateY(0)`;
+            
+            // Feedback
+            const oldText = textDiv.innerText;
+            textDiv.innerText = "Reseting...";
+            setTimeout(() => textDiv.innerText = oldText, 500);
+        }
+
+        function saveVideo() {
             const blob = new Blob(chunks, { type: 'video/mp4' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = url;
-            // Date Filename
-            const date = new Date();
-            const filename = `CinePrompt_${date.getFullYear()}${date.getMonth()+1}${date.getDate()}_${date.getHours()}${date.getMinutes()}.mp4`;
-            a.download = filename;
-            
+            a.download = `Selfie_Video_${Date.now()}.mp4`;
             document.body.appendChild(a);
             a.click();
-            
-            // Cleanup
-            setTimeout(() => { document.body.removeChild(a); window.URL.revokeObjectURL(url); }, 100);
-            alert("Video Saved! Check Gallery/Downloads.");
             
             // Reset
             scrollY = 0;
             textDiv.style.transform = `translateY(0)`;
+            alert("Video saved to Gallery");
         }
+
+        // --- SETTINGS ---
+        document.getElementById('size-range').addEventListener('input', (e) => {
+            textDiv.style.fontSize = e.target.value + 'rem';
+        });
+        
+        document.getElementById('speed-range').addEventListener('input', () => {
+             if(isRecording) startScroll();
+        });
+
     </script>
 </body>
 </html>
